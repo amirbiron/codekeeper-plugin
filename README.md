@@ -40,10 +40,12 @@ Accept: text/plain
 | משתנה | חובה | ברירת מחדל |
 |---|---|---|
 | `CODEKEEPER_PAT` | כן | — |
-| `CODEKEEPER_PRIMER_URL` | לא | `https://code-keeper-webapp.onrender.com/api/agent/primer` |
+| `CODEKEEPER_PRIMER_URL` | לא | `https://code-keeper-mcp.onrender.com/api/agent/primer` |
 | `CODEKEEPER_MCP_URL` | לא | `https://code-keeper-webapp.onrender.com/mcp` |
 
 בלי `CODEKEEPER_PAT` ה‑hook יוצא בשקט ולא מדפיס כלום. הסשן נפתח רגיל.
+
+> ⚠️ **האנדפוינט `/api/agent/primer` חי על שירות ה-MCP**, לא על הוובאפ. הצבעה ל-`https://code-keeper-webapp.onrender.com/api/agent/primer` תחזיר `404` — הוובאפ לא מכיר בנתיב הזה. השתמשו ב-MCP host: `https://code-keeper-mcp.onrender.com/api/agent/primer`.
 
 ## התקנה
 
