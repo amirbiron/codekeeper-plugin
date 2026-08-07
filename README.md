@@ -2,10 +2,7 @@
 
 פלאגין Claude שמחבר את CodeKeeper כזיכרון מתמשך.
 
-שני חלקים, והם עצמאיים זה מזה:
-
-1. **הוראות סוכן שנטענות בפתיחת סשן** — hook מסוג `SessionStart` מושך טקסט מ‑CodeKeeper ומדפיס אותו. מה שהוא מדפיס נכנס לקונטקסט של הסשן לפני ההודעה הראשונה.
-2. **שרת ה‑MCP הקיים** — 18 הכלים של CodeKeeper, נטענים יחד עם הפלאגין.
+הפלאגין עושה דבר אחד: **hook מסוג `SessionStart` שמושך את הוראות הסוכן מ‑CodeKeeper ומדפיס אותן.** מה שהוא מדפיס נכנס לקונטקסט של הסשן לפני ההודעה הראשונה.
 
 ## מבנה
 
@@ -13,10 +10,19 @@
 .claude-plugin/marketplace.json      מגדיר את המרקטפלייס האישי
 codekeeper-memory/
   .claude-plugin/plugin.json         מטא-דאטה של הפלאגין
-  .mcp.json                          מצביע על שרת ה-MCP של CodeKeeper
   hooks/hooks.json                   רושם את ה-SessionStart hook
   hooks/session_start.sh             מושך ומדפיס את הפריימר
 ```
+
+## למה אין כאן `.mcp.json`
+
+הפלאגין **לא** מגדיר קונקטור, בכוונה, משתי סיבות:
+
+**כפילות.** מי שמשתמש בזה כבר מחובר ל‑CodeKeeper דרך Connectors. פלאגין שמוסיף קונקטור שני לאותו שרת יוצר שתי רשומות לאותו דבר.
+
+**והרחבת משתנים לא עובדת שם.** התחביר `${VAR:-default}` ב‑`.mcp.json` הוא פיצ'ר של Claude Code CLI. ממשק הפלאגינים ב‑claude.ai מעביר את המחרוזת כלשונה — `url` נדחה באימות (`URL must start with 'https'`), וכותרת `Authorization: Bearer ${TOKEN}` הייתה נשלחת מילולית. האלטרנטיבה, טוקן מקודד קשיח, היא סוד בריפו.
+
+הקונקטור מוגדר בנפרד ב‑Connectors, וזה הסידור הנכון ממילא.
 
 ## מה צריך לבנות בצד השרת
 
@@ -41,7 +47,6 @@ Accept: text/plain
 |---|---|---|
 | `CODEKEEPER_PAT` | כן | — |
 | `CODEKEEPER_PRIMER_URL` | כן | — |
-| `CODEKEEPER_MCP_URL` | לא | `https://code-keeper-webapp.onrender.com/mcp` |
 
 **ל‑`CODEKEEPER_PRIMER_URL` אין ברירת מחדל בכוונה.** הפריימר מוגש על ידי שירות ה‑MCP, שהוא שירות Render נפרד מה‑webapp. ברירת מחדל שנראית סבירה ומצביעה על ההוסט הלא נכון תחזיר 404 לנצח, וזה בדיוק סוג התקלה שהמימוש הזה נועד למנוע.
 
