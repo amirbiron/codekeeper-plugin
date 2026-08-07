@@ -1,0 +1,11 @@
+{
+  "mcpServers": {
+    "codekeeper": {
+      "type": "http",
+      "url": "${CODEKEEPER_MCP_URL:-https://code-keeper-webapp.onrender.com/mcp}",
+      "headers": {
+        "Authorization": "Bearer ${CODEKEEPER_PAT}"
+      }
+    }
+  }
+}
