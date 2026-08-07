@@ -1,0 +1,13 @@
+{
+  "name": "codekeeper-memory",
+  "displayName": "CodeKeeper Memory",
+  "version": "0.1.0",
+  "description": "זיכרון מתמשך ל-Claude מעל CodeKeeper. הוראות סוכן שנטענות בפתיחת כל סשן, וגישה לאוספים, לקבצים ולפתקים דרך שרת ה-MCP הקיים.",
+  "author": {
+    "name": "אמיר חיים בירון",
+    "url": "https://code-keeper-webapp.onrender.com"
+  },
+  "repository": "https://github.com/amirbiron/codekeeper-plugin",
+  "license": "MIT",
+  "keywords": ["memory", "mcp", "codekeeper", "hebrew", "primer"]
+}
