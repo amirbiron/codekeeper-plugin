@@ -11,7 +11,7 @@
     {
       "name": "codekeeper-memory",
       "source": "./codekeeper-memory",
-      "description": "זיכרון מתמשך ל-Claude מעל CodeKeeper. הוראות סוכן שנטענות בפתיחת כל סשן, וגישה לאוספים, לקבצים ולפתקים דרך שרת ה-MCP הקיים.",
+      "description": "זיכרון מתמשך ל-Claude מעל CodeKeeper: הוראות סוכן שנטענות אוטומטית בפתיחת כל סשן.",
       "category": "productivity",
       "keywords": ["memory", "mcp", "codekeeper", "hebrew", "primer"]
     }

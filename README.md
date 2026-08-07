@@ -2,10 +2,9 @@
 
 פלאגין Claude שמחבר את CodeKeeper כזיכרון מתמשך.
 
-שני חלקים, והם עצמאיים זה מזה:
+הפלאגין עושה **דבר אחד**: hook מסוג `SessionStart` מושך טקסט מ‑CodeKeeper ומדפיס אותו. מה שהוא מדפיס נכנס לקונטקסט של הסשן לפני ההודעה הראשונה.
 
-1. **הוראות סוכן שנטענות בפתיחת סשן** — hook מסוג `SessionStart` מושך טקסט מ‑CodeKeeper ומדפיס אותו. מה שהוא מדפיס נכנס לקונטקסט של הסשן לפני ההודעה הראשונה.
-2. **שרת ה‑MCP הקיים** — 18 הכלים של CodeKeeper, נטענים יחד עם הפלאגין.
+**את שרת ה‑MCP מוסיפים בנפרד**, כ‑Connector רגיל — ראו למטה. הפלאגין לא אורז אותו, ובכוונה.
 
 ## מבנה
 
@@ -13,7 +12,6 @@
 .claude-plugin/marketplace.json      מגדיר את המרקטפלייס האישי
 codekeeper-memory/
   .claude-plugin/plugin.json         מטא-דאטה של הפלאגין
-  .mcp.json                          מצביע על שרת ה-MCP של CodeKeeper
   hooks/hooks.json                   רושם את ה-SessionStart hook
   hooks/session_start.sh             מושך ומדפיס את הפריימר
 ```
@@ -41,7 +39,6 @@ Accept: text/plain
 |---|---|---|
 | `CODEKEEPER_PAT` | כן | — |
 | `CODEKEEPER_PRIMER_URL` | כן | — |
-| `CODEKEEPER_MCP_URL` | לא | `https://code-keeper-webapp.onrender.com/mcp` |
 
 **ל‑`CODEKEEPER_PRIMER_URL` אין ברירת מחדל בכוונה.** הפריימר מוגש על ידי שירות ה‑MCP, שהוא שירות Render נפרד מה‑webapp. ברירת מחדל שנראית סבירה ומצביעה על ההוסט הלא נכון תחזיר 404 לנצח, וזה בדיוק סוג התקלה שהמימוש הזה נועד למנוע.
 
@@ -65,10 +62,33 @@ Accept: text/plain
 
 ## התקנה
 
+ב‑Claude Code בטרמינל:
+
 ```
 /plugin marketplace add amirbiron/codekeeper-plugin
 /plugin install codekeeper-memory@amirbiron
 ```
+
+ב‑Claude Code בדפדפן (`claude.ai/code`) הפקודה `/plugin` אינה קיימת — מתקינים דרך
+**Settings › Plugins › Directory**.
+
+## שרת ה‑MCP — למה הוא לא כאן
+
+הפלאגין נושא רק את ה‑hook. את שרת ה‑MCP מוסיפים ידנית כ‑Connector:
+
+```
+Settings › Connectors › Add custom connector
+  URL:  https://codekeeper-mcp.onrender.com/mcp
+```
+
+**זו לא עצלות, זו הימנעות מבאג.** הפלאגין נשא בעבר `.mcp.json` עם
+`"url": "${CODEKEEPER_MCP_URL:-...}"` ו‑`"Authorization": "Bearer ${CODEKEEPER_PAT}"`.
+הרחבת `${VAR}` היא פיצ'ר של Claude Code CLI; ממשק הפלאגינים בדפדפן לוקח את
+המחרוזת כלשונה. ה‑URL נפסל בוולידציה (`URL must start with 'https'`) — וזה
+דווקא המזל, כי הכותרת הייתה נשלחת מילולית ומחזירה 401 בלי הסבר.
+
+והתיקון שנראה מתבקש — לקודד את הטוקן קשיח בקובץ — היה שם סוד אמיתי בריפו ציבורי.
+Connector שמוגדר ידנית שומר את הטוקן בהגדרות המקומיות, במקום שאליו הוא שייך.
 
 ## בדיקה שזה עובד
 
