@@ -1,35 +1,87 @@
 # CodeKeeper Memory — SessionStart hook
 #
-# Prints the agent primer to stdout. Claude Code injects a SessionStart hook's
-# stdout straight into the session context, so whatever this prints is loaded
-# before the first user message — no CLI to install, and no dependence on the
-# model deciding to call a tool.
+# Fetches the agent primer and prints it. Claude Code injects a SessionStart
+# hook's stdout straight into the session context, so whatever lands on stdout
+# is loaded before the first user message — no CLI to install, and no
+# dependence on the model deciding to call a tool.
 #
-# Deliberately silent on every failure path. A memory primer must never be the
-# reason a session refuses to start: no token, no network, slow server, bad
-# JSON — all of them exit 0 with nothing printed, and the session proceeds
-# exactly as it would without the plugin.
+# The split that matters: the primer goes to STDOUT, diagnostics go to STDERR.
+# Stdout is context the agent reads; stderr is a message to the human. Nothing
+# but the primer may ever reach stdout, or the agent starts reading our error
+# text as if it were instructions from Amir.
 #
-# MIT. Structure adapted from Vertiso/memory-claude (MIT, © 2026 Vertiso
-# Corporation); the fetch-and-print approach here is not theirs.
+# Silence is reserved for exactly one case: HTTP 204, meaning the account has
+# no agent instructions. That is a legitimate empty state, not a fault. Every
+# other failure — no token, no URL, 4xx, 5xx, timeout — says one line on
+# stderr. An always-silent hook is indistinguishable from a working one, which
+# is how a broken URL survives for months unnoticed.
+#
+# The session always starts. Every path here exits 0.
+#
+# MIT. Plugin structure adapted from Vertiso/memory-claude (MIT, © 2026
+# Vertiso Corporation); the fetch-and-print approach and this diagnostic
+# handling are not theirs.
 
-URL="${CODEKEEPER_PRIMER_URL:-https://code-keeper-webapp.onrender.com/api/agent/primer}"
+note() { printf 'codekeeper-memory: %s\n' "$1" >&2; }
 
-# No token means the endpoint would 401 anyway. Leave quietly.
-[ -n "${CODEKEEPER_PAT:-}" ] || exit 0
-command -v curl >/dev/null 2>&1 || exit 0
+# No default host on purpose. The primer is served by the MCP service, which is
+# a different Render service from the webapp — a plausible-looking default that
+# points at the wrong host 404s forever, and the whole point of this rewrite is
+# that a misconfiguration must be audible.
+URL="${CODEKEEPER_PRIMER_URL:-}"
 
-# --max-time is the load-bearing flag: hooks.json allows 10s, so cap the
-# request below that. Render free tier cold-starts, and a sleeping server must
-# cost the session a few seconds, never a hang.
-body=$(
-  curl -fsS --max-time 6 \
+if [ -z "$URL" ]; then
+  note "CODEKEEPER_PRIMER_URL is not set — primer not loaded."
+  exit 0
+fi
+
+if [ -z "${CODEKEEPER_PAT:-}" ]; then
+  note "CODEKEEPER_PAT is not set — primer not loaded."
+  exit 0
+fi
+
+if ! command -v curl >/dev/null 2>&1; then
+  note "curl not found on PATH — primer not loaded."
+  exit 0
+fi
+
+body_file=$(mktemp 2>/dev/null) || { note "could not create a temp file."; exit 0; }
+
+# No -f here: we want the status code and the body, not curl's pass/fail.
+# --max-time 6 is load-bearing — hooks.json allows 10s, and Render's free tier
+# cold-starts. A sleeping server must cost a few seconds, never a hang.
+code=$(
+  curl -sS -o "$body_file" -w '%{http_code}' --max-time 6 \
     -H "Authorization: Bearer ${CODEKEEPER_PAT}" \
     -H "Accept: text/plain" \
     "$URL" 2>/dev/null
-) || exit 0
+) || code="000"
 
-[ -n "$body" ] || exit 0
+case "$code" in
+  200)
+    if [ -s "$body_file" ]; then
+      cat "$body_file"
+    else
+      note "server returned 200 with an empty body — expected 204 for no instructions."
+    fi
+    ;;
+  204)
+    # No agent instructions configured. Correct, expected, and silent.
+    :
+    ;;
+  401|403)
+    note "authentication rejected (HTTP $code) — check CODEKEEPER_PAT."
+    ;;
+  404)
+    note "primer endpoint not found (HTTP 404) at $URL — check CODEKEEPER_PRIMER_URL points at the MCP service, not the webapp."
+    ;;
+  000)
+    note "could not reach $URL (timeout or network error)."
+    ;;
+  *)
+    note "unexpected response (HTTP $code) from $URL."
+    ;;
+esac
 
-printf '%s\n' "$body"
+rm -f "$body_file"
 exit 0

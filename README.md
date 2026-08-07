@@ -40,10 +40,28 @@ Accept: text/plain
 | משתנה | חובה | ברירת מחדל |
 |---|---|---|
 | `CODEKEEPER_PAT` | כן | — |
-| `CODEKEEPER_PRIMER_URL` | לא | `https://code-keeper-webapp.onrender.com/api/agent/primer` |
+| `CODEKEEPER_PRIMER_URL` | כן | — |
 | `CODEKEEPER_MCP_URL` | לא | `https://code-keeper-webapp.onrender.com/mcp` |
 
-בלי `CODEKEEPER_PAT` ה‑hook יוצא בשקט ולא מדפיס כלום. הסשן נפתח רגיל.
+**ל‑`CODEKEEPER_PRIMER_URL` אין ברירת מחדל בכוונה.** הפריימר מוגש על ידי שירות ה‑MCP, שהוא שירות Render נפרד מה‑webapp. ברירת מחדל שנראית סבירה ומצביעה על ההוסט הלא נכון תחזיר 404 לנצח, וזה בדיוק סוג התקלה שהמימוש הזה נועד למנוע.
+
+## מה ההוק מדפיס, ולאן
+
+| מצב | stdout | stderr |
+|---|---|---|
+| 200 עם גוף | הפריימר | — |
+| 204 (אין הוראות) | — | — |
+| 200 עם גוף ריק | — | הערה |
+| 401 / 403 | — | "בדוק את CODEKEEPER_PAT" |
+| 404 | — | "בדוק שה‑URL מצביע על שירות ה‑MCP" |
+| 5xx / timeout | — | הערה |
+| חסר PAT או URL | — | הערה |
+
+ההפרדה עקרונית: **stdout הוא הקשר שהסוכן קורא, stderr הוא הודעה לאדם.** אסור ששום דבר מלבד הפריימר יגיע ל‑stdout, אחרת הסוכן יקרא טקסט שגיאה כאילו היה הוראה.
+
+שתיקה שמורה למקרה אחד בלבד — **204**, כלומר אין הוראות מוגדרות. זה מצב ריק לגיטימי ולא תקלה. כל כשל אחר אומר שורה אחת. הוק ששותק תמיד אינו ניתן להבחנה מהוק שעובד, וכך URL שגוי שורד חודשים בלי שאיש ישים לב.
+
+בכל המצבים ה‑hook מחזיר `exit 0` והסשן נפתח כרגיל.
 
 ## התקנה
 
@@ -55,10 +73,19 @@ Accept: text/plain
 ## בדיקה שזה עובד
 
 ```sh
-CODEKEEPER_PAT=... sh codekeeper-memory/hooks/session_start.sh
+CODEKEEPER_PAT=... \
+CODEKEEPER_PRIMER_URL=https://<mcp-host>/api/agent/primer \
+  sh codekeeper-memory/hooks/session_start.sh
 ```
 
-אמור להדפיס את טקסט ההוראות. אם לא מודפס כלום — או שאין טוקן, או שהאנדפוינט לא קיים עדיין, או שהשרת ישן. ה‑hook לא מבחין ביניהם בכוונה; הוא לא אמור להקשות על פתיחת סשן בשום מצב.
+הפריימר יודפס ל‑stdout. אם משהו לא תקין, תראה שורת אבחון אחת ב‑stderr שאומרת בדיוק מה — 401 מפנה לטוקן, 404 מפנה ל‑URL, וכן הלאה. שקט מוחלט פירושו דבר אחד בלבד: 204, כלומר שדה ההוראות ריק.
+
+להפריד בין השניים:
+
+```sh
+... sh codekeeper-memory/hooks/session_start.sh 2>/dev/null   # רק הפריימר
+... sh codekeeper-memory/hooks/session_start.sh >/dev/null    # רק האבחון
+```
 
 ## רישיון
 
