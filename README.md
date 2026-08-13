@@ -94,7 +94,7 @@ SKIP_PLUGIN_MARKETPLACE=true
 | בדיקה | תוצאה בסשן בדפדפן |
 |---|---|
 | הכלי `ListPlugins` | רשימה ריקה, למרות שבהגדרות הפלאגין דולק |
-| `find / -name session_start.sh` | לא נמצא |
+| `ls ~/.claude/plugins` | התיקייה אינה קיימת |
 | `echo $CLAUDE_PLUGIN_ROOT` | ריק |
 
 **זה לא ניתן לכיבוי מצד החשבון.** הדגל מוזרק על ידי הרנר של הסביבה ולא מגיע מהגדרות המשתמש: הוא מופיע ברשימה שה‑environment‑manager עצמו רושם ביומן תחת `startup_context_env_var_keys`, לצד `CLAUDE_CODE_REMOTE` ו‑`CLAUDE_CODE_SYNC_SKILLS`. משתני סביבה שמוגדרים על ידי המשתמש מגיעים בדרך אחרת ואינם ברשימה הזאת.
