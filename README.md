@@ -1,4 +1,4 @@
-# codekeeper-plugin
+# codekeeper-plugin 
 
 פלאגין Claude שמחבר את CodeKeeper כזיכרון מתמשך.
 
