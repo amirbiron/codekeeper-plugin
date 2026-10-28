@@ -1,0 +1,30 @@
+name: Tests
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  hook:
+    name: SessionStart hook
+    # ubuntu-24.04 ולא latest: הטסטים מתעדים התנהגות של curl 8.5.0, הגרסה שבאה איתו.
+    runs-on: ubuntu-24.04
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-python@v5
+        with:
+          python-version: '3.12'
+      - name: Install test dependencies
+        run: python -m pip install -r requirements-dev.txt
+      - name: Tool versions
+        run: |
+          bash --version | head -n 1
+          curl --version | head -n 1
+      - name: Run tests
+        run: python -m pytest
