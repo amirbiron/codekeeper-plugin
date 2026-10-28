@@ -5,8 +5,9 @@
         "hooks": [
           {
             "type": "command",
-            "command": "sh \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.sh\"",
-            "timeout": 10
+            "command": "bash \"${CLAUDE_PLUGIN_ROOT}/hooks/session_start.sh\"",
+            "timeout": 120,
+            "statusMessage": "טוען הוראות סוכן מ-CodeKeeper (עד דקה וחצי אם השרת בדיפלוי)..."
           }
         ]
       }
